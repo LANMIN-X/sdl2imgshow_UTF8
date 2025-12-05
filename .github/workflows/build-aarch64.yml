@@ -1,4 +1,4 @@
-name: Build AArch64 Release (glibc 2.31 for glibc 2.33 devices)
+name: Build AArch64 (glibc <= 2.31 required)
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
       - name: Build in Ubuntu 20.04 ARM64 (glibc 2.31)
         run: |
           mkdir -p build_aarch64
-          
+
           docker run --rm --platform=linux/arm64 \
             -v $PWD:/workspace \
             arm64v8/ubuntu:20.04 bash -e -c "
@@ -24,11 +24,21 @@ jobs:
               apt-get install -y cmake build-essential \
                 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev &&
               cd /workspace &&
+              rm -rf build_aarch64 &&
               cmake -Bbuild_aarch64 -DCMAKE_BUILD_TYPE=Release &&
-              cmake --build build_aarch64 -- -j4 &&
-              echo 'Checking GLIBC versions:' &&
-              strings build_aarch64/sdl2imgshow | grep GLIBC_
+              cmake --build build_aarch64 -- -j4
             "
+
+      - name: Check GLIBC version in binary
+        run: |
+          echo 'Checking GLIBC symbols in output binary...'
+          strings build_aarch64/sdl2imgshow | grep GLIBC_ || true
+
+          if strings build_aarch64/sdl2imgshow | grep -q 'GLIBC_2\.34'; then
+            echo "❌ ERROR: Binary incorrectly linked to GLIBC_2.34"
+            exit 1
+          fi
+          echo "✅ OK: GLIBC version <= 2.31"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
