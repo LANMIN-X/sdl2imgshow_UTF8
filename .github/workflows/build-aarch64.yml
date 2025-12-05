@@ -18,7 +18,7 @@ jobs:
             cmake build-essential ninja-build \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
             curl zip unzip tar \
-            autoconf autoconf-archive automake libtool
+            autoconf autoconf-archive automake libtool libltdl-dev
 
       - name: Install vcpkg
         run: |
