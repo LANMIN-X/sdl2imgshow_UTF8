@@ -26,7 +26,7 @@ jobs:
             cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
             cmake --build build -j4
 
-      - name: Upload ARM64 binary to Release
+      - name: Upload ARM64 binary to  Release
         uses: softprops/action-gh-release@v1
         with:
           files: build/sdl2imgshow
