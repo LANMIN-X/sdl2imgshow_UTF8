@@ -28,7 +28,7 @@ jobs:
                 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev &&
               cd /src &&
               cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
-              cmake --build build -j4
+              cmake --build build -- -j4
             "
 
       - name: Prepare Release Asset
