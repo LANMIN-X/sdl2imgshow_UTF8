@@ -4,36 +4,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-aarch64:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up QEMU
+      - name: Enable ARM64 emulator
         uses: docker/setup-qemu-action@v3
 
-      - name: Build inside Debian 10 ARM64 (glibc 2.28)
-        uses: uraimo/run-on-arch-action@v2.7.1
-        with:
-          arch: aarch64
-          distro: debian_buster
-          run: |
-            apt-get update
-            apt-get install -y \
-              cmake build-essential \
-              libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
-            cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo
-            cmake --build build -j4
+      - name: Build in Debian 10 ARM64 (glibc 2.28)
+        run: |
+          docker run --rm --platform=linux/arm64 \
+            -v $PWD:/src \
+            debian:buster \
+            bash -c "
+              apt-get update &&
+              apt-get install -y cmake build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev &&
+              cd /src &&
+              cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
+              cmake --build build -j4
+            "
 
-      - name: Generate tag
-        id: tag
-        run: echo "tag=aarch64-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
-
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          files: build/sdl2imgshow
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: sdl2imgshow-aarch64
+          path: build/sdl2imgshow
