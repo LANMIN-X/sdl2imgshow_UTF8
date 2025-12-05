@@ -1,4 +1,4 @@
-name: Manual Build AArch64
+name: Build AArch64 Release (glibc 2.28)
 
 on:
   workflow_dispatch:
@@ -8,9 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Enable ARM64 emulator
+      - name: Enable QEMU ARM64
         uses: docker/setup-qemu-action@v3
 
       - name: Build in Debian 10 ARM64 (glibc 2.28)
@@ -19,15 +20,34 @@ jobs:
             -v $PWD:/src \
             debian:buster \
             bash -c "
-              apt-get update &&
-              apt-get install -y cmake build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev &&
+              echo 'deb http://archive.debian.org/debian/ buster main' > /etc/apt/sources.list &&
+              echo 'deb http://archive.debian.org/debian-security/ buster/updates main' >> /etc/apt/sources.list &&
+              apt-get -o Acquire::Check-Valid-Until=false update &&
+              apt-get install -y --allow-unauthenticated \
+                cmake build-essential \
+                libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev &&
               cd /src &&
               cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
               cmake --build build -j4
             "
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Prepare Release Asset
+        run: |
+          mkdir -p release
+          cp build/sdl2imgshow release/
+
+      - name: Auto-tag if not tagged
+        id: tagger
+        run: |
+          TAG="aarch64-$(date +'%Y%m%d-%H%M%S')"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: sdl2imgshow-aarch64
-          path: build/sdl2imgshow
+          tag_name: ${{ steps.tagger.outputs.tag }}
+          name: "AArch64 build ${{ steps.tagger.outputs.tag }}"
+          files: release/sdl2imgshow
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
