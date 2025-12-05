@@ -6,8 +6,8 @@ Image_Object *global_image = NULL;
 Image_Object *root_image = NULL;
 Option_List *root_option = NULL;
 
-int screenWidth   = 640;
-int screenHeight  = 480;
+int screenWidth   = 1280;
+int screenHeight  = 720;
 
 typedef struct
 {
